@@ -13,7 +13,7 @@ using std::endl;
 using std::fstream;
 using std::string;
 
-typedef struct  WAV_HEADER
+typedef struct WAV_HEADER
 {
   /* RIFF Chunk Descriptor */
   uint8_t         RIFF[4];        // RIFF Header Magic header
@@ -33,13 +33,24 @@ typedef struct  WAV_HEADER
   uint32_t        Subchunk2Size;  // Sampled data length
 } wav_hdr;
 
+typedef struct NOTCH_PARAMETERS
+{
+  double BW = 0.0;         // bandwidth
+  double cf = 0.0;         // cutoff frequency
+  double sampleFreq = 0.0; // frequency
+  //  const double BW = 0.0066;          // bandwidth
+  //  const double cf = 440;             // cutoff frequency
+  //  const double sampleFreq = 44100;   // sampling frequency
+} notch_params;
+
 // Function prototypes
 int getFileSize(FILE* inFile);
-void notchFilter(short int *in, short int *filtered, int n_samples);
+void notchFilter(const short int *in, short int *filtered, int n_samples, notch_params notchParams);
 
 int main(int argc, char* argv[])
 {
   wav_hdr wavHeader;
+  notch_params notchParameters;
   int headerSize = sizeof(wav_hdr), filelength = 0;
 
   const char* filePath;
@@ -84,9 +95,6 @@ int main(int argc, char* argv[])
         //cout << value_i[i] << "|" << value_d[i] << endl;
       }
 
-    short int *filtered_i = new short int[numSamples];
-    notchFilter(value_i, filtered_i, numSamples);
-
     filelength = getFileSize(wavFile);
 
     cout << "File is                    :" << filelength << " bytes." << endl;
@@ -107,6 +115,23 @@ int main(int argc, char* argv[])
     cout << "Block align                :" << wavHeader.blockAlign << endl;
     cout << "Data string                :" << wavHeader.Subchunk2ID[0] << wavHeader.Subchunk2ID[1] << wavHeader.Subchunk2ID[2] << wavHeader.Subchunk2ID[3] << endl;
 
+    // Ask the user for notch filter parameters
+    cout << "Input bandwidth (0-0.5): ";
+    cin >> input;
+    cin.get();
+    notchParameters.BW = atof(input.c_str());
+    cout << "Input sampling frequency: ";
+    cin >> input;
+    cin.get();
+    notchParameters.sampleFreq = atof(input.c_str());
+    cout << "Input cut-off frequency ( < " << notchParameters.sampleFreq / 2.0 << "): ";
+    cin >> input;
+    cin.get();
+    notchParameters.cf = atof(input.c_str());
+
+    short int *filtered_i = new short int[numSamples];
+    notchFilter(value_i, filtered_i, numSamples, notchParameters);
+
     const char* filePath2 = "filtered.wav";
     FILE* wavFile2 = fopen(filePath2, "wb");
 
@@ -121,7 +146,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-void notchFilter(short int *in, short int *filtered, int n_samples)
+void notchFilter(const short int *in, short int *filtered, int n_samples, notch_params notchParams)
 {
   double in_2 = 0.0;
   double in_1 = 0.0;
@@ -129,9 +154,9 @@ void notchFilter(short int *in, short int *filtered, int n_samples)
   double filtered_1 = 0.0;
 
   // Parameters for the notch filter
-  const double BW = 0.0066;     // bandwidth
-  const double cf = 440;        // frequency to be cutoff
-  const double  f = cf / 44100; // frequency
+  const double BW = notchParams.BW;
+  const double cf = notchParams.cf;
+  const double  f = cf / notchParams.sampleFreq;
   double K = 0.0;
   double R = 0.0;
   double a0 = 0.0;
