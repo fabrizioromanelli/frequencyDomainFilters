@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     notch_params notchParameters(BW, cf, sampleFreq);
 
     short int *filtered_i = new short int[numSamples];
-    notchFilterOffline<short int>(value_i, filtered_i, numSamples, notchParameters);
+    bandFilterOffline<short int, notch_params>(value_i, filtered_i, numSamples, notchParameters);
 
     const char* filePath2 = "filtered.wav";
     FILE* wavFile2 = fopen(filePath2, "wb");
@@ -98,8 +98,11 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-template <class T>
-void notchFilterOffline(const T *in, T *filtered, int n_samples, notch_params notchParams)
+/**
+ *  @brief This function computes the band-pass or band-reject filter offline given the input parameters.
+ */
+template <class T, class U>
+void bandFilterOffline(const T *in, T *filtered, int n_samples, U params)
 {
   double in_2 = 0.0;
   double in_1 = 0.0;
@@ -108,7 +111,7 @@ void notchFilterOffline(const T *in, T *filtered, int n_samples, notch_params no
 
   for (int i = 0; i < n_samples; ++i)
   {
-    filtered[i] = notchParams.a0 * in[i] + notchParams.a1 * in_1 + notchParams.a2 * in_2 + notchParams.b1 * filtered_1 + notchParams.b2 * filtered_2;
+    filtered[i] = params.a0 * in[i] + params.a1 * in_1 + params.a2 * in_2 + params.b1 * filtered_1 + params.b2 * filtered_2;
     in_2 = in_1;
     in_1 = in[i];
     filtered_2 = filtered_1;
@@ -116,15 +119,18 @@ void notchFilterOffline(const T *in, T *filtered, int n_samples, notch_params no
   }
 }
 
-template <class T>
-void notchFilterOnline(const T in, T &filtered, notch_params notchParams)
+/**
+ *  @brief This function computes the band-pass or band-reject filter online given the input parameters.
+ */
+template <class T, class U>
+void bandFilterOnline(const T in, T &filtered, U params)
 {
   static double in_2 = 0.0;
   static double in_1 = 0.0;
   static double filtered_2 = 0.0;
   static double filtered_1 = 0.0;
 
-  filtered = notchParams.a0 * in + notchParams.a1 * in_1 + notchParams.a2 * in_2 + notchParams.b1 * filtered_1 + notchParams.b2 * filtered_2;
+  filtered = params.a0 * in + params.a1 * in_1 + params.a2 * in_2 + params.b1 * filtered_1 + params.b2 * filtered_2;
   in_2 = in_1;
   in_1 = in;
   filtered_2 = filtered_1;

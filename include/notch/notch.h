@@ -34,6 +34,34 @@ typedef struct WAV_HEADER
   uint32_t        Subchunk2Size;  // Sampled data length
 } wav_hdr;
 
+struct band_pass_params
+{
+  double a0, a1, a2, b1, b2;
+
+  //  const double BW = 0.0066;          // bandwidth
+  //  const double cf = 440;             // cutoff frequency
+  //  const double sampleFreq = 44100;   // sampling frequency
+  band_pass_params(double BW, double cf, double sampleFreq)
+  {
+    // Compute parameters from BW and f
+    double f = cf / sampleFreq;
+    double R = 1 - 3*BW;
+    double K = (1 - 2*R*cos(2*M_PI*f)+R*R) / (2 - 2*cos(2*M_PI*f));
+    cout << "**********************" << endl << "Band-pass filter paramers:" << endl;
+    cout << "R: " << R << " K: " << K << endl;
+
+    // Fill in the FIR coefficients
+    a0 = 1 - K;
+    a1 = 2*(K-R)*cos(2*M_PI*f);
+    a2 = R*R - K;
+    b1 = 2*R*cos(2*M_PI*f);
+    b2 = -R*R;
+    cout << "a0: " << a0 << " a1: " << a1 << " a2: " << a2 << endl;
+    cout << "b1: " << b1 << " b2: " << b2 << endl;
+    cout << "**********************" << endl;
+  }
+};
+
 struct notch_params
 {
   double a0, a1, a2, b1, b2;
@@ -64,7 +92,7 @@ struct notch_params
 
 // Function prototypes
 int getFileSize(FILE* inFile);
-template <class T> void notchFilterOffline(const T *in, T *filtered, int n_samples, notch_params notchParams);
-template <class T> void notchFilterOnline(const T in, T &filtered, notch_params notchParams);
+template <class T, class U> void bandFilterOffline(const T *in, T *filtered, int n_samples, U params);
+template <class T, class U> void bandFilterOnline(const T in, T &filtered, U notchParams);
 
 #endif // NOTCH_H
