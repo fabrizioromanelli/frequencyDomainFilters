@@ -1,6 +1,19 @@
 #ifndef NOTCH_H
 #define NOTCH_H
 
+#include <bitset>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <cstdint>
+#include <math.h>
+
+using std::cin;
+using std::cout;
+using std::endl;
+using std::fstream;
+using std::string;
+
 typedef struct WAV_HEADER
 {
   /* RIFF Chunk Descriptor */
@@ -21,18 +34,37 @@ typedef struct WAV_HEADER
   uint32_t        Subchunk2Size;  // Sampled data length
 } wav_hdr;
 
-typedef struct NOTCH_PARAMETERS
+struct notch_params
 {
-  double BW = 0.0;         // bandwidth
-  double cf = 0.0;         // cutoff frequency
-  double sampleFreq = 0.0; // frequency
+  double a0, a1, a2, b1, b2;
+
   //  const double BW = 0.0066;          // bandwidth
   //  const double cf = 440;             // cutoff frequency
   //  const double sampleFreq = 44100;   // sampling frequency
-} notch_params;
+  notch_params(double BW, double cf, double sampleFreq)
+  {
+    // Compute parameters from BW and f
+    double f = cf / sampleFreq;
+    double R = 1 - 3*BW;
+    double K = (1 - 2*R*cos(2*M_PI*f)+R*R) / (2 - 2*cos(2*M_PI*f));
+    cout << "**********************" << endl << "Notch filter paramers:" << endl;
+    cout << "R: " << R << " K: " << K << endl;
+
+    // Fill in the FIR coefficients
+    a0 = K;
+    a1 = -2*K*cos(2*M_PI*f);
+    a2 = K;
+    b1 = 2*R*cos(2*M_PI*f);
+    b2 = -R*R;
+    cout << "a0: " << a0 << " a1: " << a1 << " a2: " << a2 << endl;
+    cout << "b1: " << b1 << " b2: " << b2 << endl;
+    cout << "**********************" << endl;
+  }
+};
 
 // Function prototypes
 int getFileSize(FILE* inFile);
-void notchFilter(const short int *in, short int *filtered, int n_samples, notch_params notchParams);
+template <class T> void notchFilterIntegerOffline(const T *in, T *filtered, int n_samples, notch_params notchParams);
+template <class T> void notchFilterIntegerOnline(const T in, T &filtered, notch_params notchParams);
 
 #endif // NOTCH_H

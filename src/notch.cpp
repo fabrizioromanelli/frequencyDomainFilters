@@ -1,21 +1,8 @@
-#include <bitset>
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <cstdint>
-#include <math.h>
 #include <notch/notch.h>
-
-using std::cin;
-using std::cout;
-using std::endl;
-using std::fstream;
-using std::string;
 
 int main(int argc, char* argv[])
 {
   wav_hdr wavHeader;
-  notch_params notchParameters;
   int headerSize = sizeof(wav_hdr), filelength = 0;
 
   const char* filePath;
@@ -83,17 +70,19 @@ int main(int argc, char* argv[])
     cout << "Input bandwidth (0-0.5)    : ";
     cin >> input;
     cin.get();
-    notchParameters.BW = atof(input.c_str());
+    double BW = atof(input.c_str());
 
-    notchParameters.sampleFreq = wavHeader.SamplesPerSec;
+    double sampleFreq = wavHeader.SamplesPerSec;
 
-    cout << "Input cut-off frequency ( < " << notchParameters.sampleFreq / 2.0 << "): ";
+    cout << "Input cut-off frequency ( < " << sampleFreq / 2.0 << "): ";
     cin >> input;
     cin.get();
-    notchParameters.cf = atof(input.c_str());
+    double cf = atof(input.c_str());
+
+    notch_params notchParameters(BW, cf, sampleFreq);
 
     short int *filtered_i = new short int[numSamples];
-    notchFilter(value_i, filtered_i, numSamples, notchParameters);
+    notchFilterIntegerOffline<short int>(value_i, filtered_i, numSamples, notchParameters);
 
     const char* filePath2 = "filtered.wav";
     FILE* wavFile2 = fopen(filePath2, "wb");
@@ -109,49 +98,37 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-void notchFilter(const short int *in, short int *filtered, int n_samples, notch_params notchParams)
+template <class T>
+void notchFilterIntegerOffline(const T *in, T *filtered, int n_samples, notch_params notchParams)
 {
   double in_2 = 0.0;
   double in_1 = 0.0;
   double filtered_2 = 0.0;
   double filtered_1 = 0.0;
 
-  // Parameters for the notch filter
-  const double BW = notchParams.BW;
-  const double cf = notchParams.cf;
-  const double  f = cf / notchParams.sampleFreq;
-  double K = 0.0;
-  double R = 0.0;
-  double a0 = 0.0;
-  double a1 = 0.0;
-  double a2 = 0.0;
-  double b1 = 0.0;
-  double b2 = 0.0;
-
-  // Compute parameters from BW and f
-  R = 1 - 3*BW;
-  K = (1 - 2*R*cos(2*M_PI*f)+R*R) / (2 - 2*cos(2*M_PI*f));
-  cout << "**********************" << endl << "Notch filter paramers:" << endl;
-  cout << "R: " << R << " K: " << K << endl;
-
-  // Fill in the FIR coefficients
-  a0 = K;
-  a1 = -2*K*cos(2*M_PI*f);
-  a2 = K;
-  b1 = 2*R*cos(2*M_PI*f);
-  b2 = -R*R;
-  cout << "a0: " << a0 << " a1: " << a1 << " a2: " << a2 << endl;
-  cout << "b1: " << b1 << " b2: " << b2 << endl;
-  cout << "**********************" << endl;
-
   for (int i = 0; i < n_samples; ++i)
   {
-    filtered[i] = a0 * in[i] + a1 * in_1 + a2 * in_2 + b1 * filtered_1 + b2 * filtered_2;
+    filtered[i] = notchParams.a0 * in[i] + notchParams.a1 * in_1 + notchParams.a2 * in_2 + notchParams.b1 * filtered_1 + notchParams.b2 * filtered_2;
     in_2 = in_1;
     in_1 = in[i];
     filtered_2 = filtered_1;
     filtered_1 = filtered[i];
   }
+}
+
+template <class T>
+void notchFilterIntegerOnline(const T in, T &filtered, notch_params notchParams)
+{
+  static double in_2 = 0.0;
+  static double in_1 = 0.0;
+  static double filtered_2 = 0.0;
+  static double filtered_1 = 0.0;
+
+  filtered = notchParams.a0 * in + notchParams.a1 * in_1 + notchParams.a2 * in_2 + notchParams.b1 * filtered_1 + notchParams.b2 * filtered_2;
+  in_2 = in_1;
+  in_1 = in;
+  filtered_2 = filtered_1;
+  filtered_1 = filtered;
 }
 
 // find the file size
