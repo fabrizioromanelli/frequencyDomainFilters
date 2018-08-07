@@ -23,7 +23,7 @@ typedef struct WAV_HEADER
   uint8_t         fmt[4];         // FMT header
   uint32_t        Subchunk1Size;  // Size of the fmt chunk
   uint16_t        AudioFormat;    // Audio format 1=PCM,6=mulaw,7=alaw,     257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
-  uint16_t        NumOfChan;      // Number of channels 1=Mono 2=Sterio
+  uint16_t        NumOfChan;      // Number of channels 1=Mono 2=Stereo
   uint32_t        SamplesPerSec;  // Sampling Frequency in Hz
   uint32_t        bytesPerSec;    // bytes per second
   uint16_t        blockAlign;     // 2=16-bit mono, 4=16-bit stereo
@@ -92,38 +92,36 @@ int main(int argc, char* argv[])
       {
         fread(&value_i[i], bytesPerSample, 1, wavFile);
         value_d[i] = value_i[i] / 32768.0;
-        //cout << value_i[i] << "|" << value_d[i] << endl;
       }
 
     filelength = getFileSize(wavFile);
 
-    cout << "File is                    :" << filelength << " bytes." << endl;
-    cout << "RIFF header                :" << wavHeader.RIFF[0] << wavHeader.RIFF[1] << wavHeader.RIFF[2] << wavHeader.RIFF[3] << endl;
-    cout << "WAVE header                :" << wavHeader.WAVE[0] << wavHeader.WAVE[1] << wavHeader.WAVE[2] << wavHeader.WAVE[3] << endl;
-    cout << "FMT                        :" << wavHeader.fmt[0] << wavHeader.fmt[1] << wavHeader.fmt[2] << wavHeader.fmt[3] << endl;
-    cout << "Data size                  :" << wavHeader.ChunkSize << endl;
+    cout << "File is                    : " << filelength << " bytes." << endl;
+    cout << "RIFF header                : " << wavHeader.RIFF[0] << wavHeader.RIFF[1] << wavHeader.RIFF[2] << wavHeader.RIFF[3] << endl;
+    cout << "WAVE header                : " << wavHeader.WAVE[0] << wavHeader.WAVE[1] << wavHeader.WAVE[2] << wavHeader.WAVE[3] << endl;
+    cout << "FMT                        : " << wavHeader.fmt[0] << wavHeader.fmt[1] << wavHeader.fmt[2] << wavHeader.fmt[3] << endl;
+    cout << "Data size                  : " << wavHeader.ChunkSize << endl;
 
     // Display the sampling Rate from the header
-    cout << "Sampling Rate              :" << wavHeader.SamplesPerSec << endl;
-    cout << "Number of bits used        :" << wavHeader.bitsPerSample << endl;
-    cout << "Number of channels         :" << wavHeader.NumOfChan << endl;
-    cout << "Number of bytes per second :" << wavHeader.bytesPerSec << endl;
-    cout << "Data length                :" << wavHeader.Subchunk2Size << endl;
-    cout << "Audio Format               :" << wavHeader.AudioFormat << endl;
+    cout << "Sampling Rate              : " << wavHeader.SamplesPerSec << endl;
+    cout << "Number of bits used        : " << wavHeader.bitsPerSample << endl;
+    cout << "Number of channels         : " << wavHeader.NumOfChan << endl;
+    cout << "Number of bytes per second : " << wavHeader.bytesPerSec << endl;
+    cout << "Data length                : " << wavHeader.Subchunk2Size << endl;
+    cout << "Audio Format               : " << wavHeader.AudioFormat << endl;
     // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
 
-    cout << "Block align                :" << wavHeader.blockAlign << endl;
-    cout << "Data string                :" << wavHeader.Subchunk2ID[0] << wavHeader.Subchunk2ID[1] << wavHeader.Subchunk2ID[2] << wavHeader.Subchunk2ID[3] << endl;
+    cout << "Block align                : " << wavHeader.blockAlign << endl;
+    cout << "Data string                : " << wavHeader.Subchunk2ID[0] << wavHeader.Subchunk2ID[1] << wavHeader.Subchunk2ID[2] << wavHeader.Subchunk2ID[3] << endl;
 
     // Ask the user for notch filter parameters
-    cout << "Input bandwidth (0-0.5): ";
+    cout << "Input bandwidth (0-0.5)    : ";
     cin >> input;
     cin.get();
     notchParameters.BW = atof(input.c_str());
-    cout << "Input sampling frequency: ";
-    cin >> input;
-    cin.get();
-    notchParameters.sampleFreq = atof(input.c_str());
+
+    notchParameters.sampleFreq = wavHeader.SamplesPerSec;
+
     cout << "Input cut-off frequency ( < " << notchParameters.sampleFreq / 2.0 << "): ";
     cin >> input;
     cin.get();
