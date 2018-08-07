@@ -64,7 +64,7 @@ struct notch_params
 
 // Function prototypes
 int getFileSize(FILE* inFile);
-template <class T> void notchFilterIntegerOffline(const T *in, T *filtered, int n_samples, notch_params notchParams);
-template <class T> void notchFilterIntegerOnline(const T in, T &filtered, notch_params notchParams);
+template <class T> void notchFilterOffline(const T *in, T *filtered, int n_samples, notch_params notchParams);
+template <class T> void notchFilterOnline(const T in, T &filtered, notch_params notchParams);
 
 #endif // NOTCH_H

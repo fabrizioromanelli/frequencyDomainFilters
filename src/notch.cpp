@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     notch_params notchParameters(BW, cf, sampleFreq);
 
     short int *filtered_i = new short int[numSamples];
-    notchFilterIntegerOffline<short int>(value_i, filtered_i, numSamples, notchParameters);
+    notchFilterOffline<short int>(value_i, filtered_i, numSamples, notchParameters);
 
     const char* filePath2 = "filtered.wav";
     FILE* wavFile2 = fopen(filePath2, "wb");
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 }
 
 template <class T>
-void notchFilterIntegerOffline(const T *in, T *filtered, int n_samples, notch_params notchParams)
+void notchFilterOffline(const T *in, T *filtered, int n_samples, notch_params notchParams)
 {
   double in_2 = 0.0;
   double in_1 = 0.0;
@@ -117,7 +117,7 @@ void notchFilterIntegerOffline(const T *in, T *filtered, int n_samples, notch_pa
 }
 
 template <class T>
-void notchFilterIntegerOnline(const T in, T &filtered, notch_params notchParams)
+void notchFilterOnline(const T in, T &filtered, notch_params notchParams)
 {
   static double in_2 = 0.0;
   static double in_1 = 0.0;
