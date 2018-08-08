@@ -83,6 +83,8 @@ int main(int argc, char* argv[])
 
     filter::bandRejectParams notchParameters(BW, cf, sampleFreq);
     filter::band<short int, filter::bandRejectParams> antonio(notchParameters);
+    double a,b,c,d,e;
+    antonio.getCoefficients(a,b,c,d,e);
 
     short int *filtered_i = new short int[numSamples];
     antonio.offlineUpdate(value_i, filtered_i, numSamples);
