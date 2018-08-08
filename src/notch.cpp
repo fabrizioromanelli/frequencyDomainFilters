@@ -82,12 +82,12 @@ int main(int argc, char* argv[])
     double cf = atof(input.c_str());
 
     filter::bandRejectParams notchParameters(BW, cf, sampleFreq);
-    filter::band<short int, filter::bandRejectParams> antonio(notchParameters);
+    filter::band<short int, filter::bandRejectParams> notch(notchParameters);
     double a,b,c,d,e;
-    antonio.getCoefficients(a,b,c,d,e);
+    notch.getCoefficients(a,b,c,d,e);
 
     short int *filtered_i = new short int[numSamples];
-    antonio.offlineUpdate(value_i, filtered_i, numSamples);
+    notch.offlineUpdate(value_i, filtered_i, numSamples);
 
     const char* filePath2 = "filtered.wav";
     FILE* wavFile2 = fopen(filePath2, "wb");
