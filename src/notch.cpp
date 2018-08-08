@@ -99,7 +99,11 @@ int main(int argc, char* argv[])
 }
 
 /**
- *  @brief This function computes the band-pass or band-reject filter offline given the input parameters.
+ *  @brief This function computes the band-pass or band-reject (notch) filter offline given the input parameters.
+ *  @param input in: input signal
+ *  @param input n_samples: number of signal samples
+ *  @param input params: parameters for the band filter
+ *  @param input filtered: out filtered signal
  */
 template <class T, class U>
 void bandFilterOffline(const T *in, T *filtered, int n_samples, U params)
@@ -120,7 +124,10 @@ void bandFilterOffline(const T *in, T *filtered, int n_samples, U params)
 }
 
 /**
- *  @brief This function computes the band-pass or band-reject filter online given the input parameters.
+ *  @brief This function computes the band-pass or band-reject (notch) filter online given the input parameters.
+ *  @param input in: input signal
+ *  @param input params: parameters for the band filter
+ *  @param input filtered: out filtered signal
  */
 template <class T, class U>
 void bandFilterOnline(const T in, T &filtered, U params)
