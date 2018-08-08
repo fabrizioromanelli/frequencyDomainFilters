@@ -1,4 +1,5 @@
-#include <notch/notch.h>
+#include <sound/wave.h>
+#include <bandFilter/bandFilter.h>
 
 int main(int argc, char* argv[])
 {
@@ -66,23 +67,25 @@ int main(int argc, char* argv[])
     cout << "Block align                : " << wavHeader.blockAlign << endl;
     cout << "Data string                : " << wavHeader.Subchunk2ID[0] << wavHeader.Subchunk2ID[1] << wavHeader.Subchunk2ID[2] << wavHeader.Subchunk2ID[3] << endl;
 
+    // Filling in the parameters for the filter
+    double sampleFreq = wavHeader.SamplesPerSec;
+
     // Ask the user for notch filter parameters
-    cout << "Input bandwidth (0-0.5)    : ";
+    cout << "Input bandwidth ( < " << sampleFreq / 2.0 << "): ";
     cin >> input;
     cin.get();
     double BW = atof(input.c_str());
-
-    double sampleFreq = wavHeader.SamplesPerSec;
 
     cout << "Input cut-off frequency ( < " << sampleFreq / 2.0 << "): ";
     cin >> input;
     cin.get();
     double cf = atof(input.c_str());
 
-    notch_params notchParameters(BW, cf, sampleFreq);
+    filter::bandRejectParams notchParameters(BW, cf, sampleFreq);
+    filter::band<short int, filter::bandRejectParams> antonio(notchParameters);
 
     short int *filtered_i = new short int[numSamples];
-    bandFilterOffline<short int, notch_params>(value_i, filtered_i, numSamples, notchParameters);
+    antonio.offlineUpdate(value_i, filtered_i, numSamples);
 
     const char* filePath2 = "filtered.wav";
     FILE* wavFile2 = fopen(filePath2, "wb");
@@ -96,52 +99,6 @@ int main(int argc, char* argv[])
   fclose(wavFile);
 
   return 0;
-}
-
-/**
- *  @brief This function computes the band-pass or band-reject (notch) filter offline given the input parameters.
- *  @param input in: input signal
- *  @param input n_samples: number of signal samples
- *  @param input params: parameters for the band filter
- *  @param input filtered: out filtered signal
- */
-template <class T, class U>
-void bandFilterOffline(const T *in, T *filtered, int n_samples, U params)
-{
-  double in_2 = 0.0;
-  double in_1 = 0.0;
-  double filtered_2 = 0.0;
-  double filtered_1 = 0.0;
-
-  for (int i = 0; i < n_samples; ++i)
-  {
-    filtered[i] = params.a0 * in[i] + params.a1 * in_1 + params.a2 * in_2 + params.b1 * filtered_1 + params.b2 * filtered_2;
-    in_2 = in_1;
-    in_1 = in[i];
-    filtered_2 = filtered_1;
-    filtered_1 = filtered[i];
-  }
-}
-
-/**
- *  @brief This function computes the band-pass or band-reject (notch) filter online given the input parameters.
- *  @param input in: input signal
- *  @param input params: parameters for the band filter
- *  @param input filtered: out filtered signal
- */
-template <class T, class U>
-void bandFilterOnline(const T in, T &filtered, U params)
-{
-  static double in_2 = 0.0;
-  static double in_1 = 0.0;
-  static double filtered_2 = 0.0;
-  static double filtered_1 = 0.0;
-
-  filtered = params.a0 * in + params.a1 * in_1 + params.a2 * in_2 + params.b1 * filtered_1 + params.b2 * filtered_2;
-  in_2 = in_1;
-  in_1 = in;
-  filtered_2 = filtered_1;
-  filtered_1 = filtered;
 }
 
 // find the file size
