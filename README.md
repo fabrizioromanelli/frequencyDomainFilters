@@ -1,4 +1,4 @@
-# notch
+# Frequency Domain Filters
 
 Compile with: cmake .. && make -j69
 Execute with: ./notch <filename.wav>
